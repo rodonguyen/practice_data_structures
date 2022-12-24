@@ -1,13 +1,18 @@
 class Node:
-  def __init__(self, data=None) -> None:
+  def __init__(self, data=None, next=None, prev=None) -> None:
     self.data = data
-    self.next = None
+    self.next = next
+    self.prev = prev
   
   # def append(self, next_node):
   #   self.next = next_node
 
   def __str__(self) -> str:
     return str(self.data)
+  
+  def print_all_props(self) -> str:
+    return str(f'{self.prev} - {self.data} - {self.next}')
+      
 
 class SingleLinkedList:
   def __init__(self, node) -> None:
@@ -27,9 +32,13 @@ class SingleLinkedList:
     return str([str(node) for node in self])
 
   def insert(self, node):
-    self.last_node.next = node
-    self.last_node = node
+    # insert at the end
+    node.prev = self.last_node
+    self.last_node.next = node  
+
+    self.last_node = node # for storing purpose
     self.length += 1
+
 
     if self.maximum.data < node.data:
       self.maximum = node
@@ -54,21 +63,31 @@ class SingleLinkedList:
 
     self.length -= 1
     
-    # print(pre_node.data, pre_node.next.data)  ###
+    # Search min/max again if delete one
     if self.maximum == removed_node:
       print('search max')
       self.maximum = self.search_max()
     if self.minimum == removed_node:
       print('search min')
       self.minimum = self.search_min()
-
-  def search_data(self): 
-    pass
+ 
+  def search_data(self, data) -> Node: 
+    node_pointer = self.head
+    has_found = False
+    while (not has_found):
+      if (data == node_pointer.data):
+        has_found = True
+        return node_pointer
+      elif (node_pointer.next != None):
+        node_pointer = node_pointer.next
+      else: return -1
 
   def get_successor(self):
+    # Already implemented in node
     pass
 
   def get_predecessor(self):
+    # Already implemented in node
     pass
 
 
@@ -102,20 +121,33 @@ n4 = Node('Thu')
 n5 = Node('Fri')
 
 llist = SingleLinkedList(n1)
+
+## Test insert
 llist.insert(n2)
 llist.insert(n3)
 llist.insert(n4)
 llist.insert(n5)
 
 
-print('min:',llist.minimum)
-print('max:',llist.maximum)
+# print('min:',llist.minimum)
+# print('max:',llist.maximum)
 
-# llist.remove(2)
-llist.delete(0)
-llist.delete(3)
+## Test delete
+# llist.delete(0)
+# llist.delete(1)
 
 print(llist)
-print('min:',llist.minimum)
-print('max:',llist.maximum)
-print('length:', llist.length)
+print(llist.head.next.print_all_props())
+
+## Test search_data
+print(llist.search_data('Thu'))
+print(llist.search_data('Frri'))
+
+# print('min:',llist.minimum)
+# print('max:',llist.maximum)
+# print('length:', llist.length)
+
+## Test successor/predecessor
+print(n5.prev)
+print(n5.next)
+print(n2.prev)

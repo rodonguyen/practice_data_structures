@@ -1,3 +1,10 @@
+"""
+Source: https://www.youtube.com/watch?v=FyyVbuLZav8
+More videos about simulated annealing: https://youtu.be/eBmU1ONJ-os
+"""
+
+
+
 import random
 import numpy as np
 import math 
