@@ -70,7 +70,7 @@ graph.print_graph()
 ####################################
 #           DIRECTED GRAPH         #
 ####################################
-class DirectedGraphAdjacencyList():
+class DirectedGraphAdjacencyList(GraphAdjacencyList):
   def __init__(self, vertices, edges) -> None:
     self.adjacency_list = self.construct(vertices, edges)
 
@@ -116,7 +116,7 @@ class DirectedGraphAdjacencyList():
 
 vertices = {0, 1, 2, 3, 4, 5}
 edges = {(0, 1), (1, 2), (0, 3), (1, 3), (3, 4), (2, 5), (4, 5), (2, 4)}
-graph = GraphAdjacencyList(vertices=vertices, edges=edges)
+graph = DirectedGraphAdjacencyList(vertices=vertices, edges=edges)
 graph.print_graph()
 
 graph.insert_edge((5,6))
