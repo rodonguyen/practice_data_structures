@@ -1,48 +1,29 @@
-def groupAnagrams1(strs):
+import math
 
-    d = {}
-    for item in strs:
-        sortedstr = tuple(sorted(item))
-        if sortedstr not in d:
-            d[sortedstr] = [item]
-        else: 
-            d[sortedstr].append(item)
 
-    ans = []
-    for key in d:
-        ans.append(d[key])
+def rob(nums) -> int:
+        curr, prev1, prev2 = 0, 0, 0
+        for i in nums:
+            curr = max(i + prev2, prev1)
+            prev1, prev2 = curr, prev1
+            print(curr, prev1, prev2)
 
-    return ans
+        return curr
 
-def groupAnagrams2(strs):
 
-    d = {}
-    for item in strs:
-        sortedstr = tuple(sorted(item))
-        if sortedstr not in d:
-            d[sortedstr] = [item]
-        else: 
-            d[sortedstr].append(item)
+# nums = [2,7,9,3,1]
+# print(rob(nums), 12)
+# nums = [2,7,9,3,1,0]
+# print(rob(nums), 12)
+# nums = [1,2,3,1]
+# print(rob(nums), 4)
+# nums = [11]
+# print(rob(nums), 11)
+# nums = [3,1,1,3,3,2]
+# print(rob(nums), 8)
+# nums = [3,1,1,3]
+# print(rob(nums), 6)
+# nums = [1,3,10,1,1,3]
+# print(rob(nums), 14)
 
-    return d.keys()
-
-import time
-def run10000(strs, func1, func2):
-    time1 = 0
-    time2 = 0
-
-    for _ in range(100):
-        start = time.perf_counter()
-        for _ in range(10000):
-            func1(strs)
-        time1 += time.perf_counter() - start
-
-        start = time.perf_counter()
-        for _ in range(10000):
-            func2(strs)
-        time2 += time.perf_counter() - start
-
-    print('Runtime func1: ', time1)
-    print('Runtime func2: ', time2)
-
-run10000(["eat","tea","tan","ate","nat","bat"], groupAnagrams1, groupAnagrams2)
+print('123456'[1::-1])

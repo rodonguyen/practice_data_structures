@@ -17,7 +17,7 @@ def binary_search_first(an_array, key, low, high):
   mid = int((low + high) /2)
   print(low, mid, high)
 
-  if (low > high): return low  # top boundary
+  if (low > high): return low  # low boundary
 
   if (an_array[mid] < key):  # prioritise search to the left half
     return binary_search_first(an_array, key, mid+1, high) 
