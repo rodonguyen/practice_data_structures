@@ -3,40 +3,55 @@ import collections
 import heapq
 import math
 import bisect
+from collections import Counter
 
-def minArea(x,y,k):
-    length = len(x)
-    mini = [math.inf]
 
-    def dfs2(size, start_index, minx, maxx, miny, maxy):
-        nonlocal mini
-        if size == k:
-            max_side = max(abs(maxx-minx), abs(maxy-miny))
-            print(max_side)
-            mini[0] = min(max_side, mini[0]) 
-            return
+
+class ChemicalMachine:
+    def __init__(self):
+        self.content = []
+
+    def add(self, chemical):
+        self.content.append(chemical)
         
-        # for i in range(start_index, min(length, (length-k+1)+start_index)): # Same effect
-        for i in range(start_index, (length-k+1)+size):  
-            dfs2(size+1, i+1, min(minx, x[i]), max(maxx, x[i]), min(miny, y[i]), max(maxy, y[i]))
+    def apply_heat(self):
+        content_size = len(self.content)
+        
+        if content_size > 2:
+            self.content = ['UNKNOWN']
+        
+        counter = Counter(self.content)
+        if content_size == 2:
+            if counter['GREEN'] == 2:
+                self.content = ['ORANGE']
+            elif counter['GREEN'] == 1 and counter['YELLOW'] == 1:
+                self.content = ['BROWN']
+            else:
+                self.content = ['UNKNOWN']
 
-    dfs2(0, 0, math.inf, -math.inf, math.inf, -math.inf)
-    return (mini[0]+2)**2
+        elif content_size == 1:
+            if counter['ORANGE'] == 1:
+                self.content = ['RED', 'RED']
+            elif counter['BROWN'] == 1:
+                self.content = ['MAGENTA']
+            else:
+                self.content = ['UNKNOWN']
+
+    def empty_machine(self):
+        result = self.content.copy()
+        self.content = []
+        return result
 
 
-x = [-4,3,1]
-y = [3,3,-1]
-print(minArea(x,y,2), ' - ans should be 36')
+if __name__ == "__main__":
+    machine = ChemicalMachine()
 
+    machine.add("GREEN")
+    machine.add("YELLOW")
+    machine.apply_heat()
+    print(",".join(machine.empty_machine()))  # should print BROWN
 
-x = [-4,3,1]
-y = [3,3,-1]
-print(minArea(x,y,3), ' - ans should be 81')
-
-x = [-4,3,3]
-y = [3,3,2]
-print(minArea(x,y,2), ' - ans should be 9')
-
-x = [1,2,3,4,5,6,7,8,9]
-y = [3,3,3,3,3,3,3,3,3]
-print(minArea(x,y,9), ' - ans should be 100')
+    machine.add("RED")
+    machine.add("YELLOW")
+    machine.apply_heat()
+    print(",".join(machine.empty_machine()))  # should print UNKNOWN
