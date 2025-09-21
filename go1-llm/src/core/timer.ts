@@ -6,7 +6,6 @@
 import type {
   TimerId,
   MarkId,
-  TimerState,
   TimerConfig,
   TimerRuntime,
   TimerSnapshot,
@@ -17,16 +16,20 @@ import type {
   CreateTimerParams,
   CreateMarkParams,
   UpdateMarkParams,
-  TimerPrecision,
   MarkNotification,
-  MarkNotificationState,
-  TimerError,
-  TimerErrorCode
-} from '@types/timer.types.js';
+  TimerError
+} from '../types/timer.types.js';
 
-import { EventEmitter } from '@events/event-emitter.js';
-import { TimeUtils } from '@utils/time-utils.js';
-import { ValidationUtils } from '@utils/validation-utils.js';
+import {
+  TimerState,
+  TimerErrorCode,
+  TimerPrecision,
+  MarkNotificationState
+} from '../types/timer.types.js';
+
+import { EventEmitter } from '../events/event-emitter.js';
+import { TimeUtils } from '../utils/time-utils.js';
+import { ValidationUtils } from '../utils/validation-utils.js';
 
 /**
  * High-precision timer with advanced mark system
@@ -34,13 +37,13 @@ import { ValidationUtils } from '@utils/validation-utils.js';
  */
 export class Timer {
   private readonly _id: TimerId;
-  private readonly _eventEmitter: EventEmitter<TimerEvent>;
+  private readonly _eventEmitter: EventEmitter;
   private _config: TimerConfig;
   private _runtime: TimerRuntime;
   private _tickInterval: NodeJS.Timeout | null = null;
   private _notificationTimeouts: Map<MarkId, NodeJS.Timeout> = new Map();
   
-  constructor(params: CreateTimerParams, eventEmitter: EventEmitter<TimerEvent>) {
+  constructor(params: CreateTimerParams, eventEmitter: EventEmitter) {
     this._id = TimeUtils.generateId();
     this._eventEmitter = eventEmitter;
     
@@ -132,7 +135,6 @@ export class Timer {
       ...this._runtime,
       state: TimerState.RUNNING,
       startTime,
-      endTime: undefined,
       pausedDuration: 0,
       lastTick: performance.now()
     };
@@ -290,11 +292,31 @@ export class Timer {
     }
     
     const existingMark = this._config.marks[markIndex]!;
-    const updatedMark: TimerMark = {
+    
+    // Build the updated mark carefully to avoid type issues
+    const baseUpdate = {
       ...existingMark,
-      ...updates,
       id: markId,
       updatedAt: new Date()
+    };
+
+    // Handle notification settings merge
+    let notificationSettings = existingMark.notificationSettings;
+    if (updates.notificationSettings) {
+      notificationSettings = {
+        ...existingMark.notificationSettings,
+        ...updates.notificationSettings
+      };
+    }
+
+    // Apply all updates except notificationSettings first
+    const updatedMark: TimerMark = {
+      ...baseUpdate,
+      ...(updates.name && { name: updates.name }),
+      ...(updates.targetTime && { targetTime: updates.targetTime }),
+      ...(updates.description !== undefined && { description: updates.description }),
+      ...(updates.isEnabled !== undefined && { isEnabled: updates.isEnabled }),
+      notificationSettings
     };
     
     ValidationUtils.validateTimerMark(updatedMark);
@@ -371,11 +393,9 @@ export class Timer {
   
   private createConfig(params: CreateTimerParams): TimerConfig {
     const now = new Date();
-    return {
+    const config: TimerConfig = {
       id: this._id,
       name: params.name,
-      description: params.description,
-      targetDuration: params.targetDuration,
       isCountdown: params.isCountdown ?? false,
       marks: params.marks?.map(mark => this.createMark(mark)) ?? [],
       autoStart: params.autoStart ?? false,
@@ -384,6 +404,17 @@ export class Timer {
       createdAt: now,
       updatedAt: now
     };
+
+    // Only add optional fields if they're provided
+    const result = { ...config };
+    if (params.description !== undefined) {
+      (result as any).description = params.description;
+    }
+    if (params.targetDuration !== undefined) {
+      (result as any).targetDuration = params.targetDuration;
+    }
+
+    return result;
   }
   
   private createInitialRuntime(): TimerRuntime {
@@ -405,11 +436,10 @@ export class Timer {
   
   private createMark(params: CreateMarkParams): TimerMark {
     const now = new Date();
-    return {
+    const mark: TimerMark = {
       id: TimeUtils.generateId(),
       name: params.name,
       targetTime: params.targetTime,
-      description: params.description,
       notificationSettings: {
         blinkCount: 3,
         blinkColor: '#FF0000',
@@ -422,6 +452,13 @@ export class Timer {
       createdAt: now,
       updatedAt: now
     };
+
+    // Only add description if it's provided
+    if (params.description !== undefined) {
+      return { ...mark, description: params.description };
+    }
+
+    return mark;
   }
   
   private getTickRate(): number {

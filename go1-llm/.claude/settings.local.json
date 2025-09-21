@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(yarn build)",
+      "Bash(rm:*)",
+      "Bash(node:*)",
+      "Bash(yarn add:*)",
+      "Bash(yarn dev:electron:*)",
+      "Bash(yarn build:electron-dev:*)"
+    ],
+    "deny": []
+  }
+}

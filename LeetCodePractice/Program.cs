@@ -71,11 +71,24 @@
         var newAddedNode = _linkedList.AddFirst(value);
         _dict.Add(key, newAddedNode);
     }
-}
 
-/**
- * Your LRUCache object will be instantiated and called as such:
- * LRUCache obj = new LRUCache(capacity);
- * int param_1 = obj.Get(key);
- * obj.Put(key,value);
- */
+    // make main function to test the LRUCache
+    // use the following input to test the LRUCache
+    // ["LRUCache","put","put","get","put","get","put","get","get","get"]
+    // [[2],[1,1],[2,2],[1],[3,3],[2],[4,4],[1],[3],[4]]
+    // the expected output is [null,null,null,1,null,-1,null,-1,3,4]
+
+    static void Main(string[] args)
+    {
+        LRUCache lruCache = new LRUCache(2);
+        lruCache.Put(1, 1);
+        lruCache.Put(2, 2);
+        Console.WriteLine(lruCache.Get(1));
+        lruCache.Put(3, 3);
+        Console.WriteLine(lruCache.Get(2));
+        lruCache.Put(4, 4);
+        Console.WriteLine(lruCache.Get(1));
+        Console.WriteLine(lruCache.Get(3));
+        Console.WriteLine(lruCache.Get(4));
+    }
+}

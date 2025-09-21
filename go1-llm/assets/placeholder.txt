@@ -1,0 +1,4 @@
+Placeholder for app icons. In a real app, you would add:
+- icon.png (256x256 app icon)
+- tray.png (16x16 system tray icon)  
+- tray-alert.png (16x16 system tray icon with alert state)
