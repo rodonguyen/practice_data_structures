@@ -2,12 +2,5 @@ brute-force-password
 expenses.csv
 
 # Ignore all bin/ and obj/ directories
-bin/
-obj/
-
-# Ignore .NET build outputs
-*.dll
-*.exe
-*.pdb
-*.cache
-*.log
+**/*bin/
+**/*obj/

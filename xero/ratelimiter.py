@@ -2,7 +2,7 @@ import time
 from collections import deque
 
 
-class LeakyBucketRateLimiter:
+class FixedSlidingWindowRateLimiter:
     """
     Sliding window rate limiter for API requests.
     Allows configurable max requests per time window.
