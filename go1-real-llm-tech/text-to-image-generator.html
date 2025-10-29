@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text-to-Image Generator</title>
+    <style>
+        @font-face {
+            font-family: 'Go1Font';
+            src: url('./go1font.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Go1Font', system-ui, arial;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+            font-size: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        #textInput {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: 'Go1Font', system-ui, arial;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        #textInput:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        #fontSizeInput {
+            width: 70%;
+            margin-right: 10px;
+        }
+
+        #fontSizeValue {
+            font-weight: 500;
+            color: #007bff;
+        }
+
+        #colorInput {
+            width: 60px;
+            height: 40px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        #colorInput:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        #generateBtn {
+            width: 100%;
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: 'Go1Font', system-ui, arial;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 20px;
+        }
+
+        #generateBtn:hover {
+            background: #0056b3;
+        }
+
+        #generateBtn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result-section {
+            text-align: center;
+        }
+
+        #imageDisplay {
+            margin: 20px 0;
+            display: none;
+        }
+
+        #generatedImage {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-width: 400px;
+            max-height: 400px;
+            width: auto;
+            height: auto;
+            margin: 20px 0;
+        }
+
+        #downloadBtn {
+            padding: 8px 16px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Go1Font', system-ui, arial;
+            cursor: pointer;
+            display: none;
+        }
+
+        #downloadBtn:hover {
+            background: #1e7e34;
+        }
+
+        #status {
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        #hiddenCanvas {
+            display: none;
+        }
+
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .success {
+            color: #155724;
+            background: #d4edda;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Text-to-Image Generator</h1>
+        
+        <div class="input-group">
+            <label for="textInput">Enter Text:</label>
+            <textarea id="textInput" placeholder="Type your text here..." maxlength="500"></textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="fontSizeInput">Font Size:</label>
+            <input type="range" id="fontSizeInput" min="80" max="300" value="160" step="10">
+            <span id="fontSizeValue">160px</span>
+        </div>
+
+        <div class="input-group">
+            <label for="colorInput">Text Color:</label>
+            <input type="color" id="colorInput" value="#000000">
+        </div>
+
+        <button id="generateBtn">Generate Image</button>
+
+        <div id="status"></div>
+
+        <div class="result-section">
+            <div id="imageDisplay">
+                <img id="generatedImage" alt="Generated text image">
+                <br>
+                <button id="downloadBtn">Download Image</button>
+            </div>
+        </div>
+
+        <canvas id="hiddenCanvas" width="1000" height="1000"></canvas>
+    </div>
+
+    <script>
+        class TextToImageGenerator {
+            constructor() {
+                this.canvas = document.getElementById('hiddenCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.config = {
+                    maxWidth: 1000,
+                    maxHeight: 1000,
+                    baseFontSize: 160,
+                    minFontSize: 80,
+                    lineSpacing: 1.2,
+                    padding: 10
+                };
+                this.fontLoaded = false;
+                this.loadFont();
+            }
+
+            async loadFont() {
+                try {
+                    this.updateStatus('Loading Go1Font...');
+                    
+                    // Load the Go1Font explicitly
+                    const go1Font = new FontFace('Go1Font', 'url(./go1font.woff2)');
+                    await go1Font.load();
+                    document.fonts.add(go1Font);
+                    
+                    // Verify font is available
+                    const fontAvailable = document.fonts.check('160px Go1Font');
+                    
+                    if (fontAvailable) {
+                        this.ctx.font = `${this.config.baseFontSize}px 'Go1Font', system-ui, arial`;
+                        this.fontLoaded = true;
+                        this.updateStatus('Go1Font loaded successfully');
+                        console.log("Go1Font loaded and verified");
+                    } else {
+                        throw new Error('Go1Font not available after loading');
+                    }
+                } catch (error) {
+                    console.warn('Go1Font loading failed, using fallback:', error);
+                    this.ctx.font = `${this.config.baseFontSize}px system-ui, arial`;
+                    this.fontLoaded = true;
+                    this.updateStatus('Using fallback font (system-ui)');
+                }
+            }
+
+            updateStatus(message, type = 'info') {
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = message;
+                statusEl.className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            }
+
+            measureText(text, fontSize) {
+                this.ctx.font = `${fontSize}px 'Go1Font', system-ui, arial`;
+                const metrics = this.ctx.measureText(text);
+                return {
+                    width: metrics.width,
+                    height: fontSize
+                };
+            }
+
+            wrapText(text, fontSize) {
+                const words = text.split(' ');
+                const lines = [];
+                let currentLine = '';
+
+                for (const word of words) {
+                    const testLine = currentLine ? `${currentLine} ${word}` : word;
+                    const { width } = this.measureText(testLine, fontSize);
+                    
+                    if (width <= this.config.maxWidth - (this.config.padding * 2)) {
+                        currentLine = testLine;
+                    } else {
+                        if (currentLine) {
+                            lines.push(currentLine);
+                            currentLine = word;
+                        } else {
+                            lines.push(word);
+                        }
+                    }
+                }
+                
+                if (currentLine) {
+                    lines.push(currentLine);
+                }
+
+                return lines;
+            }
+
+            calculateOptimalFontSize(text) {
+                let fontSize = this.config.baseFontSize;
+                let lines = [];
+
+                while (fontSize >= this.config.minFontSize) {
+                    lines = this.wrapText(text, fontSize);
+                    const totalHeight = lines.length * fontSize * this.config.lineSpacing;
+                    
+                    if (totalHeight <= this.config.maxHeight - (this.config.padding * 2)) {
+                        break;
+                    }
+                    
+                    fontSize -= 1;
+                }
+
+                return { fontSize, lines };
+            }
+
+            renderTextToCanvas(text, textColor = '#000000') {
+                if (!this.fontLoaded) {
+                    throw new Error('Font not loaded yet');
+                }
+
+                if (!text.trim()) {
+                    throw new Error('Please enter some text');
+                }
+
+                this.ctx.clearRect(0, 0, this.config.maxWidth, this.config.maxHeight);
+                
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.fillRect(0, 0, this.config.maxWidth, this.config.maxHeight);
+
+                const { fontSize, lines } = this.calculateOptimalFontSize(text);
+                
+                this.ctx.fillStyle = textColor;
+                this.ctx.font = `${fontSize}px 'Go1Font', system-ui, arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+
+                const lineHeight = fontSize * this.config.lineSpacing;
+                const totalTextHeight = lines.length * lineHeight;
+                const startY = (this.config.maxHeight - totalTextHeight) / 2 + lineHeight / 2;
+
+                lines.forEach((line, index) => {
+                    const y = startY + (index * lineHeight);
+                    this.ctx.fillText(line, this.config.maxWidth / 2, y);
+                });
+
+                return this.canvas.toDataURL('image/png');
+            }
+
+            generateImage(text, baseFontSize = 160, textColor = '#000000') {
+                try {
+                    this.updateStatus('Generating image...');
+                    // Update config with custom font size
+                    const originalBaseFontSize = this.config.baseFontSize;
+                    this.config.baseFontSize = baseFontSize;
+                    
+                    const imageDataURL = this.renderTextToCanvas(text, textColor);
+                    
+                    // Restore original font size
+                    this.config.baseFontSize = originalBaseFontSize;
+                    
+                    this.updateStatus('Image generated successfully!', 'success');
+                    return imageDataURL;
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : 'Failed to generate image';
+                    this.updateStatus(errorMessage, 'error');
+                    throw error;
+                }
+            }
+
+            isReady() {
+                return this.fontLoaded;
+            }
+        }
+
+        const generator = new TextToImageGenerator();
+
+        const textInput = document.getElementById('textInput');
+        const fontSizeInput = document.getElementById('fontSizeInput');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const colorInput = document.getElementById('colorInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const imageDisplay = document.getElementById('imageDisplay');
+        const generatedImage = document.getElementById('generatedImage');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // Update font size display when slider changes
+        fontSizeInput.addEventListener('input', (e) => {
+            fontSizeValue.textContent = e.target.value + 'px';
+        });
+
+        generateBtn.addEventListener('click', async () => {
+            if (!generator.isReady()) {
+                alert('Font is still loading, please wait...');
+                return;
+            }
+
+            const text = textInput.value.trim();
+            if (!text) {
+                alert('Please enter some text');
+                return;
+            }
+
+            try {
+                generateBtn.disabled = true;
+                const fontSize = parseInt(fontSizeInput.value);
+                const textColor = colorInput.value;
+                const imageDataURL = generator.generateImage(text, fontSize, textColor);
+                
+                generatedImage.src = imageDataURL;
+                imageDisplay.style.display = 'block';
+                downloadBtn.style.display = 'inline-block';
+                
+                downloadBtn.onclick = () => {
+                    const link = document.createElement('a');
+                    link.download = 'text-image.png';
+                    link.href = imageDataURL;
+                    link.click();
+                };
+                
+            } catch (error) {
+                console.error('Generation failed:', error);
+            } finally {
+                generateBtn.disabled = false;
+            }
+        });
+
+        textInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                generateBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
